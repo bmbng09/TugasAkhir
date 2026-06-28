@@ -1,15 +1,3 @@
-"""
-Analisis Statistik — Friedman Test + Wilcoxon Signed-Rank Test
-Analisis Komparatif Teknik Prompting pada Claude Sonnet 4.6
-Bambang Istijab — 105222007 — Universitas Pertamina
-
-Cara pakai:
-1. pip install pandas openpyxl scipy numpy matplotlib seaborn
-2. Letakkan Data_LLM_AS_A_JUDGE.xlsx di folder yang sama
-3. Jalankan: python uji_statistik.py
-4. Output: hasil_statistik.xlsx + beberapa plot PNG
-"""
-
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -28,7 +16,7 @@ print("=" * 65)
 print("ANALISIS STATISTIK - FRIEDMAN TEST + WILCOXON SIGNED-RANK TEST")
 print("=" * 65)
 
-# ── 1. Load & clean data ──────────────────────────────────────
+#  1. Load & clean data 
 print("\n[1/6] Membaca data skor final...")
 df = pd.read_excel("Data_LLM_AS_A_JUDGE.xlsx",
                    sheet_name="Skor Final", header=1)
@@ -48,7 +36,7 @@ print(f"  Total baris: {len(df)}")
 print(f"  Teknik: {df['Teknik'].unique().tolist()}")
 print(f"  Sub-bidang: {df['Sub_Bidang'].dropna().unique().tolist()}")
 
-# ── 2. Build matriks 50x5 per dimensi ────────────────────────
+#  2. Build matriks 50x5 per dimensi 
 print("\n[2/6] Membangun matriks skor...")
 questions = sorted(df['ID_Q'].unique())
 
@@ -63,7 +51,7 @@ def build_matrix(dim):
 matrices = {dim: build_matrix(dim) for dim in DIMS}
 print(f"  Matriks bersih: {matrices['Rata_rata'].shape} per dimensi")
 
-# ── 3. Friedman Test — Agregat ────────────────────────────────
+#  3. Friedman Test — Agregat 
 print("\n[3/6] Menjalankan Friedman Test...")
 print("\n  === FRIEDMAN TEST AGREGAT ===")
 
@@ -85,7 +73,7 @@ for dim, label in zip(DIMS, DIM_LABELS):
     if dim == 'Rata_rata':
         print(f"    Mean ranks: {dict(zip(TEKNIK_SHORT, [f'{mean_ranks[t]:.4f}' for t in TEKNIK]))}")
 
-# ── 4. Wilcoxon Post-Hoc ──────────────────────────────────────
+#  4. Wilcoxon Post-Hoc 
 print("\n[4/6] Menjalankan Wilcoxon Signed-Rank Test...")
 pairs = list(combinations(TEKNIK, 2))
 n_pairs = len(pairs)
@@ -131,7 +119,7 @@ for (t1, t2) in pairs:
     print(f"  {t1:12} vs {t2:12}: W={W:.1f}, p={p:.6f} {mark}")
     print(f"    mean_diff={mean_diff:+.4f}, r={r:.4f} ({mag})")
 
-# ── 5. Friedman per sub-bidang ────────────────────────────────
+#  5. Friedman per sub-bidang 
 print("\n[5/6] Friedman Test per sub-bidang...")
 sub_results = []
 for sub in sorted(df['Sub_Bidang'].dropna().unique()):
@@ -152,7 +140,7 @@ for sub in sorted(df['Sub_Bidang'].dropna().unique()):
         mark = "SIGNIFIKAN" if sig else "Tidak signifikan"
         print(f"  {sub[:40]:40} n={n_sub}, χ²={s:.3f}, p={p_sub:.4f} {mark}")
 
-# ── 6. Save results to Excel ──────────────────────────────────
+#  6. Save results to Excel 
 print("\n[6/6] Menyimpan hasil ke Excel...")
 
 def fill(hex_c): return PatternFill("solid", fgColor=hex_c)
@@ -166,7 +154,7 @@ def border_thin():
 
 wb = Workbook()
 
-# ── Sheet 1: Friedman Agregat ─────────────────────────────────
+#  Sheet 1: Friedman Agregat 
 ws1 = wb.active
 ws1.title = "Friedman Agregat"
 ws1.sheet_view.showGridLines = False
@@ -209,7 +197,7 @@ for i, (dim, label) in enumerate(zip(DIMS, DIM_LABELS)):
         c.alignment = align(h="center" if col > 1 else "left")
         c.border = border_thin()
 
-# ── Sheet 2: Mean Ranks ───────────────────────────────────────
+#  Sheet 2: Mean Ranks 
 ws2 = wb.create_sheet("Mean Ranks")
 ws2.sheet_view.showGridLines = False
 for col in range(1, 8):
@@ -261,7 +249,7 @@ for i, (dim, label) in enumerate(zip(DIMS, DIM_LABELS)):
         c.alignment = align()
         c.border = border_thin()
 
-# ── Sheet 3: Wilcoxon ─────────────────────────────────────────
+#  Sheet 3: Wilcoxon 
 ws3 = wb.create_sheet("Wilcoxon Post-Hoc")
 ws3.sheet_view.showGridLines = False
 ws3.column_dimensions['A'].width = 18
@@ -315,7 +303,7 @@ for i, r in enumerate(wilcoxon_results):
         c.alignment = align(h="center" if col > 2 else "left")
         c.border = border_thin()
 
-# ── Sheet 4: Matriks p-value ──────────────────────────────────
+#  Sheet 4: Matriks p-value 
 ws4 = wb.create_sheet("Matriks p-value")
 ws4.sheet_view.showGridLines = False
 for col in range(1, 7):
@@ -377,7 +365,7 @@ for i, t1 in enumerate(TEKNIK):
         c.alignment = align()
         c.border = border_thin()
 
-# ── Sheet 5: Per Sub-Bidang ───────────────────────────────────
+#  Sheet 5: Per Sub-Bidang 
 ws5 = wb.create_sheet("Friedman Per Sub-Bidang")
 ws5.sheet_view.showGridLines = False
 ws5.column_dimensions['A'].width = 36
@@ -418,10 +406,10 @@ for i, r in enumerate(sub_results):
         c.alignment = align(h="center" if col in [2,3,4,5] else "left")
         c.border = border_thin()
 
-# ── Save ──────────────────────────────────────────────────────
+#  Save 
 wb.save("hasil_statistik.xlsx")
 
-# ── Visualisasi: Mean Ranks ───────────────────────────────────
+#  Visualisasi: Mean Ranks 
 mat_overall = matrices['Rata_rata']
 ranked_overall = mat_overall.rank(axis=1)
 mean_ranks_overall = ranked_overall.mean()
@@ -474,7 +462,7 @@ print("\nFile output:")
 print("  hasil_statistik.xlsx — 5 sheet hasil lengkap")
 print("  plot_statistik.png   — visualisasi mean ranks + matriks p-value")
 
-# ── Summary ───────────────────────────────────────────────────
+#  Summary 
 print("\n" + "=" * 65)
 print("RINGKASAN HASIL")
 print("=" * 65)
